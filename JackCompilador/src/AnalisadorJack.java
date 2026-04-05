@@ -24,4 +24,39 @@ public class AnalisadorJack {
             processarArquivo(f);
         }
     }
+
+    private static void processarArquivo(File arquivoEntrada) {
+        // Define o nome de saída Main.jack -> MainT.xml
+        String nomeSaida = arquivoEntrada.getAbsolutePath().replace(".jack", "T.xml");
+
+        try {
+            LeitorLexicoJack leitor = new LeitorLexicoJack(arquivoEntrada);
+            PrintWriter escritor = new PrintWriter(new FileWriter(nomeSaida));
+
+            escritor.println("<tokens>");
+
+            // LOOP de integração
+            while (leitor.temMaisTokens()) {
+                leitor.avancar();
+                String tipo = leitor.tipoToken();
+                String valor = leitor.obterToken();
+
+                // Tratamento especial para Strings
+                if (tipo.equals("stringConstant")) {
+                    valor = valor.substring(1, valor.length() - 1);
+                }
+
+                // Escreve a linha no XML chamando a função de escapar
+                escritor.println("<" + tipo + "> " + escapar(valor) + " </" + tipo + ">");
+            }
+
+            escritor.println("</tokens>");
+            escritor.close();
+            System.out.println("Arquivo gerado: " + nomeSaida);
+
+        } catch (IOException e) {
+            System.err.println("Erro: " + e.getMessage());
+        }
+    }
+
 }
