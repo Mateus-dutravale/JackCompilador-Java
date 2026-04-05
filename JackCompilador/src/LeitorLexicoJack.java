@@ -23,6 +23,7 @@ public class LeitorLexicoJack {
         this.indiceTokenAtual = -1;
         tokenizar();
     }
+
     /// ///////////////////////////////////////////////Tokenização///////////////////////////////////////////////
     private void tokenizar() {
         // Esta regex separa: Strings entre aspas | Símbolos | Números | Palavras/ID
@@ -35,4 +36,15 @@ public class LeitorLexicoJack {
             tokens.add(matcher.group());
         }
     }
+}
+/// ///////////////////////////////////////////////Dicionário Jack///////////////////////////////////////////
+
+//palavras-chave oficiais que devem ser reconhecidas
+private static final Set<String> PALAVRAS_CHAVE = new HashSet<>(Arrays.asList(
+        "class", "constructor", "function", "method", "field", "static", "var",
+        "int", "char", "boolean", "void", "true", "false", "null", "this",
+        "let", "do", "if", "else", "while", "return"
+));
+//símbolos válidos
+private static final String SIMBOLOS = "{}()[].,;+-*/&|<>=~";
 /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
