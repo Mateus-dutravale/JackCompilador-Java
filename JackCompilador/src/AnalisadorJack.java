@@ -5,7 +5,7 @@ public class AnalisadorJack {
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.out.println("C:\\Users\\cactu\\PROJETOS\\java\\JackCompilador-Java\\JackCompilador\\src\\test\\Main.jack");
+            System.out.println("C:\\Users\\cactu\\PROJETOS\\java\\JackCompilador-Java\\JackCompilador\\src\\test\\ArrayTest\\Main.jack");
             return;
         }
 
