@@ -5,7 +5,7 @@ public class AnalisadorJack {
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.out.println("Uso: java AnalisadorJack <arquivo.jack ou diretorio>");
+            System.out.println("C:\\Users\\cactu\\PROJETOS\\java\\JackCompilador-Java\\JackCompilador\\src\\test\\Main.jack");
             return;
         }
 
@@ -59,4 +59,10 @@ public class AnalisadorJack {
         }
     }
 
+    private static String escapar(String valor) {
+        return valor.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
+    }
 }
