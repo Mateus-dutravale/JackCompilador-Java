@@ -13,41 +13,70 @@ Projeto desenvolvido para a disciplina de **Compiladores** - Universidade Federa
 
 ---
 
+## 📂 Estrutura do Projeto
+
+A organização do repositório foi projetada para garantir que todos os scripts de teste funcionem de forma relativa, mantendo as ferramentas de validação integradas:
+
+```text
+JackCompilador-Java/
+├── nand2tetris/         # Ferramentas oficiais e gabaritos
+│   ├── projects/10/     # Arquivos XML de referência 
+│   └── tools/           # TextComparer.bat (validador de saída)
+├── src/                 # Código-fonte do compilador
+│   ├── AnalisadorJack.java   # Gerenciador de arquivos e fluxo
+│   └── LeitorLexicoJack.java # Motor de tokenização (Scanner)
+├── test/                # resultados gerados
+│   ├── ArrayTest/       
+│   ├── SquareTest/      
+│   └── ExpressionLessSquareTest/
+├── testa_tudo.bat       # Script de automação de testes 
+├── .gitignore           
+└── README.md            
+````
+
 ## 🚀 Instruções para Compilar e Executar
 
 ### 1. Pré-requisitos
 * Java JDK instalado (versão 11 ou superior recomendada).
-* Git para clonagem do repositório.
+* Sistema Operacional Windows (necessário para executar o script `.bat` de validação).
 
 ### 2. Compilação
-No terminal, dentro do diretório com os arquivos `.java`, execute: 
+A partir da raiz do projeto, compile todas as classes localizadas na pasta `src` utilizando o comando:
 ```bash
-javac AnalisadorJack.java
-``` 
-
+javac src/*.java
+````
 ### 3. Execução Manual
-   O analisador aceita tanto um arquivo individual quanto um diretório completo:
+O analisador aceita tanto um arquivo individual quanto um diretório completo. O programa gerará arquivos T.xml contendo os tokens identificados no mesmo diretório de origem.
 
-```Bash
+````Bash
 # Processar um único arquivo
-java AnalisadorJack caminho/para/seu/Arquivo.jack
+java -cp src AnalisadorJack test/ArrayTest/Main.jack
 
-# Processar todos os arquivos .jack de uma pasta
-java AnalisadorJack caminho/para/pasta/
-```
-O programa gerará arquivos *T.xml contendo os tokens identificados no mesmo diretório de origem.
-
+# Processar todos os arquivos .jack de uma pasta (Recomendado)
+java -cp src AnalisadorJack test/ArrayTest/
+````
 ## ✅ Validação e Testes
-Para facilitar a correção e garantir que a saída está rigorosamente dentro do padrão exigido pelo curso, utilizamos um script de automação.
+Para facilitar a correção e garantir que a saída está rigorosamente dentro do padrão exigido pelo curso, utilizamos um script de automação localizado na raiz do projeto.
 
-Utilizando o testa_tudo.bat
-Este arquivo é o validador oficial do nosso projeto. Ele automatiza o processo de compilação, execução e comparação de resultados.
+### Utilizando o `testa_tudo.bat`
+Este arquivo é o validador oficial do nosso projeto. Ele automatiza o processo de compilação, execução e comparação bit-a-bit dos resultados.
 
-No Windows, execute o arquivo diretamente:
+No terminal (na raiz do projeto), execute:
+
+```bash
+.\testa_tudo.bat
 ```
-testa_tudo.bat
-```
+
 O script irá:
+
+* Compilação: Certifica-se de que as classes Java estão atualizadas.
+
+* Execução: Roda o AnalisadorJack sobre as pastas de teste dentro de test/.
+
+* Comparação: Chama o TextComparer do Nand2Tetris para validar os arquivos gerados contra o gabarito oficial em nand2tetris/projects/10.
+
+* Resultado: Exibe Comparison ended successfully para cada teste aprovado.
+
 
 * Compilar as classes Java.
 
