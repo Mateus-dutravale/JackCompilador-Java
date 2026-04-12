@@ -84,9 +84,8 @@ O script irá:
 
 * Comparar os arquivos gerados com os arquivos de referência (comparação de strings).
 
-## 📂 Estrutura Principal
-* AnalisadorJack.java: Classe driver que gerencia os arquivos de entrada e saída.
+## ⚙️ Detalhamento dos Componentes
 
-* LeitorLexicoJack.java: Implementação da lógica de tokenização.
-
-* testa_tudo.bat: Script de automação e validação.
+* **`AnalisadorJack.java`**: Classe driver que gerencia a entrada de dados. Identifica arquivos `.jack`, coordena o processo de leitura e garante o escapamento correto de caracteres especiais no XML (como `<`, `&`, `>`).
+* **`LeitorLexicoJack.java`**: O núcleo do projeto. Implementa a lógica de tokenização utilizando expressões regulares para classificar os tokens em `Keyword`, `Symbol`, `Identifier`, `IntConst` e `StringConst`, além de ignorar comentários e espaços em branco.
+* **`testa_tudo.bat`**: Script de integração que une o código Java às ferramentas de comparação do curso, permitindo auditoria rápida da conformidade do scanner.
