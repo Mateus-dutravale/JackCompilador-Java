@@ -19,19 +19,13 @@ A organização do repositório foi projetada para garantir que todos os scripts
 
 ```text
 JackCompilador-Java/
-├── nand2tetris/         # Ferramentas oficiais e gabaritos
-│   ├── projects/10/     # Arquivos XML de referência 
-│   └── tools/           # TextComparer.bat (validador de saída)
-├── src/                 # Código-fonte do compilador
-│   ├── AnalisadorJack.java   # Gerenciador de arquivos e fluxo
-│   └── LeitorLexicoJack.java # Motor de tokenização (Scanner)
-├── test/                # resultados gerados
-│   ├── ArrayTest/       
-│   ├── SquareTest/      
-│   └── ExpressionLessSquareTest/
-├── testa_tudo.bat       # Script de automação de testes 
-├── .gitignore           
-└── README.md            
+├── nand2tetris/         # Ferramentas e gabaritos oficiais
+├── src/main/java/       # Código-fonte (Analisador e Leitor)
+├── test/                # Pastas de teste (Array, Square, etc.)
+├── .gitignore           # Arquivos ignorados pelo Git
+├── LICENSE              # Licença do projeto
+├── README.md            # Documentação
+└── testa_tudo.bat       # Script de validação automática            
 ````
 
 ## 🚀 Instruções para Compilar e Executar
