@@ -1,7 +1,8 @@
 @echo off
-set "tools=..\nand2tetris\tools\TextComparer.bat"
-set "ArquivoOriginal=..\nand2tetris\projects\10"
-set "Resultados=."
+:: Ajuste dos caminhos: o script agora está na RAIZ, então não precisa de ".."
+set "tools=nand2tetris\tools\TextComparer.bat"
+set "ArquivoOriginal=nand2tetris\projects\10"
+set "Resultados=test"
 
 echo ======================================================
 echo           VALIDADOR AUTOMATICO - PROJETO 10
