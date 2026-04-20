@@ -197,9 +197,105 @@ public class MecanismoCompilacao {
         imprimirIdentacao();
         escritor.println("</statements>");
     }
-    public void compilarLet() {}
-    public void compilarSe() {}
-    public void compilarEnquanto() {}
-    public void compilarFazer() {}
-    public void compilarRetorno() {}
+    public void compilarLet() {
+        imprimirIdentacao();
+        escritor.println("<letStatement>");
+        nivelIdentacao++;
+        consumir("let");
+        consumir(leitor.obterToken()); // nomeVar
+        if (leitor.obterToken().equals("[")) {
+            consumir("[");
+            compilarExpressao();
+            consumir("]");
+        }
+        consumir("=");
+        compilarExpressao();
+        consumir(";");
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</letStatement>");
+    }
+    public void compilarSe() {
+        imprimirIdentacao();
+        escritor.println("<ifStatement>");
+        nivelIdentacao++;
+
+        consumir("if");
+        consumir("(");
+        compilarExpressao(); // Chama a lógica da Fase 3
+        consumir(")");
+
+        consumir("{");
+        compilarStatements(); // Aqui a mágica acontece: ele volta a ler comandos dentro do IF
+        consumir("}");
+
+        /////////////////////////////////////////////Tratamento do ELSE////////////////////////////////////////
+        // O else é opcional, então verificamos se ele existe antes de consumir
+        if (leitor.obterToken().equals("else")) {
+            consumir("else");
+            consumir("{");
+            compilarStatements(); // Recursividade novamente para o bloco else
+            consumir("}");
+        }
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</ifStatement>");
+    }
+
+    public void compilarEnquanto() {
+        imprimirIdentacao();
+        escritor.println("<whileStatement>");
+        nivelIdentacao++;
+        consumir("while");
+        consumir("(");
+        compilarExpressao();
+        consumir(")");
+        consumir("{");
+        compilarStatements(); // Recursividade!
+        consumir("}");
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</whileStatement>");
+    }
+
+    public void compilarFazer() {
+        imprimirIdentacao();
+        escritor.println("<doStatement>");
+        nivelIdentacao++;
+        consumir("do");
+        // Aqui chamamos uma expressão de chamada de função (mesma lógica do Termo)
+        consumir(leitor.obterToken());
+        if (leitor.obterToken().equals(".")) {
+            consumir(".");
+            consumir(leitor.obterToken());
+        }
+        consumir("(");
+        compilarListaArgumentos();
+        consumir(")");
+        consumir(";");
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</doStatement>");
+    }
+
+    public void compilarRetorno() {
+        imprimirIdentacao();
+        escritor.println("<returnStatement>");
+        nivelIdentacao++;
+        consumir("return");
+        if (!leitor.obterToken().equals(";")) {
+            compilarExpressao();
+        }
+        consumir(";");
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</returnStatement>");
+    }
+
+    public void compilarExpressao() {
+    }
+    public void compilarListaArgumentos() {
+    }
+
 }
