@@ -157,7 +157,37 @@ public class MecanismoCompilacao {
         imprimirIdentacao();
         escritor.println("</subroutineBody>");
     }
+
     public void compilarVariavel() {
+        imprimirIdentacao();
+        escritor.println("<varDec>");
+        nivelIdentacao++;
+
+        consumir("var");
+        consumir(leitor.obterToken()); // tipo
+        consumir(leitor.obterToken()); // varName
+
+        while (leitor.obterToken().equals(",")) {
+            consumir(",");
+            consumir(leitor.obterToken()); // outro varName
+        }
+        consumir(";");
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</varDec>");
     }
-    public void compilarStatements() {}
+
+    public void compilarStatements() {
+        imprimirIdentacao();
+        escritor.println("<statements>");
+        nivelIdentacao++;
+
+        // Aqui você vai construir o grande loop dos comandos na próxima etapa
+        // Por enquanto, deixamos as tags prontas para o código compilar
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</statements>");
+    }
 }
