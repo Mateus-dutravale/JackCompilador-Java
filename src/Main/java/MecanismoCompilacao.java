@@ -113,6 +113,27 @@ public class MecanismoCompilacao {
         escritor.println("</subroutineDec>");
     }
 
-    public void compilarListaParametros() {}
+    public void compilarListaParametros() {
+        imprimirIdentacao();
+        escritor.println("<parameterList>");
+        nivelIdentacao++;
+
+        // Se o próximo token não for ')', então existem parâmetros
+        if (!leitor.obterToken().equals(")")) {
+            consumir(leitor.obterToken()); // tipo
+            consumir(leitor.obterToken()); // nomeVar
+
+            // Se houver vírgula, existem mais parâmetros
+            while (leitor.obterToken().equals(",")) {
+                consumir(",");
+                consumir(leitor.obterToken()); // tipo
+                consumir(leitor.obterToken()); // nomeVar
+            }
+        }
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</parameterList>");
+    }
     public void compilarCorpoSubrotina() {}
 }
