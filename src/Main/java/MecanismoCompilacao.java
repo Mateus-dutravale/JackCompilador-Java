@@ -183,11 +183,23 @@ public class MecanismoCompilacao {
         escritor.println("<statements>");
         nivelIdentacao++;
 
-        // Aqui você vai construir o grande loop dos comandos na próxima etapa
-        // Por enquanto, deixamos as tags prontas para o código compilar
-
+        // Loop para identificar qual comando processar
+        while (true) {
+            String token = leitor.obterToken();
+            if (token.equals("let")) compilarLet();
+            else if (token.equals("if")) compilarSe();
+            else if (token.equals("while")) compilarEnquanto();
+            else if (token.equals("do")) compilarFazer();
+            else if (token.equals("return")) compilarRetorno();
+            else break; // Se não for nenhum desses, os comandos acabaram
+        }
         nivelIdentacao--;
         imprimirIdentacao();
         escritor.println("</statements>");
     }
+    public void compilarLet() {}
+    public void compilarSe() {}
+    public void compilarEnquanto() {}
+    public void compilarFazer() {}
+    public void compilarRetorno() {}
 }
