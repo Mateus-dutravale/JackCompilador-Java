@@ -135,5 +135,29 @@ public class MecanismoCompilacao {
         imprimirIdentacao();
         escritor.println("</parameterList>");
     }
-    public void compilarCorpoSubrotina() {}
+
+    public void compilarCorpoSubrotina() {
+        imprimirIdentacao();
+        escritor.println("<subroutineBody>");
+        nivelIdentacao++;
+
+        consumir("{");
+
+        // Primeiro, trata as declarações de variáveis locais (var int x;)
+        while (leitor.obterToken().equals("var")) {
+            compilarVariavel();
+        }
+
+        // Depois, trata os comandos (let, if, while, etc.)
+        compilarStatements();
+
+        consumir("}");
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</subroutineBody>");
+    }
+    public void compilarVariavel() {
+    }
+    public void compilarStatements() {}
 }
