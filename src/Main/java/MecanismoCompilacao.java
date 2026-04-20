@@ -46,4 +46,51 @@ public class MecanismoCompilacao {
         String tag = tipo.toLowerCase().replace("_", "");
         escritor.println("<" + tag + "> " + conteudo + " </" + tag + ">");
     }
+
+    /////////////////////////////////////////////////Regras da Gramática///////////////////////////////////////
+    public void compilarClasse() {
+        escritor.println("<class>");
+        nivelIdentacao++;
+
+        consumir("class");
+        consumir(leitor.obterToken());  // Nome da classe (ex: Square, Main)
+        consumir("{");
+
+        /////////////////////////////////////////////Corpo da Classe///////////////////////////////////////////
+        // Enquanto o token for static ou field, compila as variáveis de classe
+        while (leitor.obterToken().equals("static") || leitor.obterToken().equals("field")) {
+            compilarVariavelClasse();
+        }
+
+        // Enquanto o token for um início de sub-rotina (Parte que o Mateus vai implementar)
+        while (leitor.obterToken().equals("constructor") || leitor.obterToken().equals("function") || leitor.obterToken().equals("method")) {
+            // O Mateus vai descomentar isso aqui quando fizer o compilarSubrotina();
+        }
+
+        consumir("}");
+
+        nivelIdentacao--;
+        escritor.println("</class>");
+    }
+    public void compilarVariavelClasse() {
+        imprimirIdentacao();
+        escritor.println("<classVarDec>");
+        nivelIdentacao++;
+
+        consumir(leitor.obterToken()); // Consome 'static' ou 'field'
+        consumir(leitor.obterToken()); // Consome o tipo (int, char, boolean, etc)
+        consumir(leitor.obterToken()); // Consome o primeiro nome da variável
+
+        // Se tiver vírgula, significa que tem mais variáveis na mesma linha
+        while (leitor.obterToken().equals(",")) {
+            consumir(",");
+            consumir(leitor.obterToken()); // Consome o próximo nome
+        }
+
+        consumir(";");
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</classVarDec>");
+    }
 }
