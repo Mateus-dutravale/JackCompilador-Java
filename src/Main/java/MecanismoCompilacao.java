@@ -20,6 +20,4 @@ public class MecanismoCompilacao {
     public void fechar() {
         escritor.close();
     }
-
-    // add aqui
 }
