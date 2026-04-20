@@ -64,7 +64,7 @@ public class MecanismoCompilacao {
 
         // Enquanto o token for um início de sub-rotina (Parte que o Mateus vai implementar)
         while (leitor.obterToken().equals("constructor") || leitor.obterToken().equals("function") || leitor.obterToken().equals("method")) {
-            // O Mateus vai descomentar isso aqui quando fizer o compilarSubrotina();
+            compilarSubRotina();
         }
 
         consumir("}");
@@ -93,4 +93,26 @@ public class MecanismoCompilacao {
         imprimirIdentacao();
         escritor.println("</classVarDec>");
     }
+    /////////////////////////////////////////////////Sub-rotinas///////////////////////////////////////////////
+    public void compilarSubRotina() {
+        imprimirIdentacao();
+        escritor.println("<subroutineDec>");
+        nivelIdentacao++;
+
+        consumir(leitor.obterToken());
+        consumir(leitor.obterToken());
+        consumir(leitor.obterToken());
+
+        consumir("(");
+        compilarListaParametros();
+        consumir(")");
+        compilarCorpoSubrotina();
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</subroutineDec>");
+    }
+
+    public void compilarListaParametros() {}
+    public void compilarCorpoSubrotina() {}
 }
