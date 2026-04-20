@@ -30,43 +30,24 @@ public class AnalisadorJack {
     }
 
     private static void processarArquivo(File arquivoEntrada) {
-        // Define o nome de saída Main.jack -> MainT.xml
-        String nomeSaida = arquivoEntrada.getAbsolutePath().replace(".jack", "T.xml");
+        // Agora o nome de saída será .xml (sem o T), conforme pedido pelo professor
+        String nomeSaida = arquivoEntrada.getAbsolutePath().replace(".jack", ".xml");
 
         try {
-            LeitorLexicoJack leitor = new LeitorLexicoJack(arquivoEntrada);
-            PrintWriter escritor = new PrintWriter(new FileWriter(nomeSaida));
+            // Criamos o seu motor de compilação em português
+            MecanismoCompilacao motor = new MecanismoCompilacao(arquivoEntrada, new File(nomeSaida));
 
-            escritor.println("<tokens>");
+            // Chamamos a função inicial que você criou (Passo 3)
+            System.out.println("Compilando estrutura sintática: " + arquivoEntrada.getName());
+            motor.compilarClasse();
 
-            // LOOP de integração
-            while (leitor.temMaisTokens()) {
-                leitor.avancar();
-                String tipo = leitor.tipoToken();
-                String valor = leitor.obterToken();
+            // Fecha o arquivo para salvar as alterações
+            motor.fechar();
 
-                // Tratamento especial para Strings
-                if (tipo.equals("stringConstant")) {
-                    valor = valor.substring(1, valor.length() - 1);
-                }
-
-                // Escreve a linha no XML chamando a função de escapar
-                escritor.println("<" + tipo + "> " + escapar(valor) + " </" + tipo + ">");
-            }
-
-            escritor.println("</tokens>");
-            escritor.close();
-            System.out.println("Arquivo gerado: " + nomeSaida);
+            System.out.println("Arquivo XML gerado com sucesso: " + nomeSaida);
 
         } catch (IOException e) {
-            System.err.println("Erro: " + e.getMessage());
+            System.err.println("Erro ao processar o analisador sintático: " + e.getMessage());
         }
-    }
-
-    private static String escapar(String valor) {
-        return valor.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\", "&quot;");
     }
 }
