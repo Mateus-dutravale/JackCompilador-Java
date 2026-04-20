@@ -293,9 +293,60 @@ public class MecanismoCompilacao {
         escritor.println("</returnStatement>");
     }
 
+    /////////////////////////////////////////////////Expressões (Base)/////////////////////////////////////////
+
     public void compilarExpressao() {
+        imprimirIdentacao();
+        escritor.println("<expression>");
+        nivelIdentacao++;
+
+        compilarTermo();
+
+        // Se houver um operador (+, -, *, / etc), ele processa o próximo termo
+        String operadores = "+-*/&|<>=";
+        while (leitor.obterToken().length() == 1 && operadores.contains(leitor.obterToken())) {
+            consumir(leitor.obterToken());
+            compilarTermo();
+        }
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</expression>");
     }
+
     public void compilarListaArgumentos() {
+        imprimirIdentacao();
+        escritor.println("<expressionList>");
+        nivelIdentacao++;
+
+        // Se o próximo token não for ')', significa que há argumentos (expressões)
+        if (!leitor.obterToken().equals(")")) {
+            compilarExpressao();
+
+            // Enquanto houver vírgula, continua processando as expressões
+            while (leitor.obterToken().equals(",")) {
+                consumir(",");
+                compilarExpressao();
+            }
+        }
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</expressionList>");
+    }
+
+    /////////////////////////////////////////////////Termos (Base)/////////////////////////////////////////////
+
+    public void compilarTermo() {
+        imprimirIdentacao();
+        escritor.println("<term>");
+        nivelIdentacao++;
+
+        consumir(leitor.obterToken());
+
+        nivelIdentacao--;
+        imprimirIdentacao();
+        escritor.println("</term>");
     }
 
 }
