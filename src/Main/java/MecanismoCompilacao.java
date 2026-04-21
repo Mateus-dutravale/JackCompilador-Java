@@ -36,11 +36,11 @@ public class MecanismoCompilacao {
         String tipo = leitor.tipoToken();
         String conteudo = leitor.obterToken();
 
-        // 1. Ajuste de Nome da Tag (O Lexer pode retornar minúsculo, mas o XML exige CamelCase)
+        // Ajuste de Nome da Tag 
         String tagXml;
         if (tipo.equalsIgnoreCase("stringConstant")) {
             tagXml = "stringConstant";
-            // 2. Remoção das Aspas: O XML de strings não deve conter as aspas duplas
+            //Remoção das Aspas
             conteudo = conteudo.replace("\"", "");
         } else if (tipo.equalsIgnoreCase("integerConstant")) {
             tagXml = "integerConstant";
@@ -54,13 +54,13 @@ public class MecanismoCompilacao {
             tagXml = tipo; // Caso haja algum outro tipo não mapeado
         }
 
-        // 3. Escapamento XML: Caracteres que quebram o arquivo XML
+        //Escapamento XML
         if (conteudo.equals("<")) conteudo = "&lt;";
         else if (conteudo.equals(">")) conteudo = "&gt;";
         else if (conteudo.equals("&")) conteudo = "&amp;";
         else if (conteudo.equals("\"")) conteudo = "&quot;";
 
-        // 4. Impressão: O espaço antes e depois do conteúdo é vital para o TextComparer
+        // Impressão
         imprimirIdentacao();
         escritor.println("<" + tagXml + "> " + conteudo + " </" + tagXml + ">");
     }
@@ -368,23 +368,23 @@ public class MecanismoCompilacao {
         String token = leitor.obterToken();
         String tipo = leitor.tipoToken();
 
-        // 1. Constantes e Palavras-chave (true, false, null, this)
+        //Constantes e Palavras-chave (true, false, null, this)
         if (tipo.equals("integerConstant") || tipo.equals("stringConstant") ||
                 token.equals("true") || token.equals("false") || token.equals("null") || token.equals("this")) {
             consumir(token);
         }
-        // 2. Expressões entre parênteses (Recursividade!)
+        //Expressões entre parênteses 
         else if (token.equals("(")) {
             consumir("(");
             compilarExpressao();
             consumir(")");
         }
-        // 3. Operadores Unários (-x ou ~y)
+        //Operadores Unários (-x ou ~y)
         else if (token.equals("-") || token.equals("~")) {
             consumir(token);
             compilarTermo();
         }
-        // 4. Identificadores (Variáveis, Arrays ou Chamadas de Método)
+        //Identificadores (Variáveis, Arrays ou Chamadas de Método)
         else {
             consumir(token); // Consome o nome (da var ou da classe/método)
 
