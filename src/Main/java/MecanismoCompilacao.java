@@ -304,9 +304,14 @@ public class MecanismoCompilacao {
 
         // Se houver um operador (+, -, *, / etc), ele processa o próximo termo
         String operadores = "+-*/&|<>=";
-        while (leitor.temMaisTokens() && leitor.obterToken().length() == 1 && ops.contains(leitor.obterToken())) {
-            consumir(leitor.obterToken());
-            compilarTermo();
+        while (leitor.temMaisTokens()) {
+            String tokenAtual = leitor.obterToken();
+            if (tokenAtual.length() == 1 && operadores.contains(tokenAtual)) {
+                consumir(tokenAtual);
+                compilarTermo();
+            } else {
+                break;
+            }
         }
 
         nivelIdentacao--;
