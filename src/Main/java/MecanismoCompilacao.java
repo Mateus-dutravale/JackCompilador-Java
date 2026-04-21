@@ -304,7 +304,7 @@ public class MecanismoCompilacao {
 
         // Se houver um operador (+, -, *, / etc), ele processa o próximo termo
         String operadores = "+-*/&|<>=";
-        while (leitor.obterToken().length() == 1 && operadores.contains(leitor.obterToken())) {
+        while (leitor.temMaisTokens() && leitor.obterToken().length() == 1 && ops.contains(leitor.obterToken())) {
             consumir(leitor.obterToken());
             compilarTermo();
         }
@@ -342,8 +342,46 @@ public class MecanismoCompilacao {
         escritor.println("<term>");
         nivelIdentacao++;
 
-        consumir(leitor.obterToken());
+        String token = leitor.obterToken();
+        String tipo = leitor.tipoToken();
 
+        // 1. Constantes e Palavras-chave (true, false, null, this)
+        if (tipo.equals("integerConstant") || tipo.equals("stringConstant") ||
+                token.equals("true") || token.equals("false") || token.equals("null") || token.equals("this")) {
+            consumir(token);
+        }
+        // 2. Expressões entre parênteses (Recursividade!)
+        else if (token.equals("(")) {
+            consumir("(");
+            compilarExpressao();
+            consumir(")");
+        }
+        // 3. Operadores Unários (-x ou ~y)
+        else if (token.equals("-") || token.equals("~")) {
+            consumir(token);
+            compilarTermo();
+        }
+        // 4. Identificadores (Variáveis, Arrays ou Chamadas de Método)
+        else {
+            consumir(token); // Consome o nome (da var ou da classe/método)
+
+            String proximo = leitor.obterToken();
+            if (proximo.equals("[")) { // É um Array
+                consumir("[");
+                compilarExpressao();
+                consumir("]");
+            } else if (proximo.equals("(")) { // Chamada direta: metodo(args)
+                consumir("(");
+                compilarListaArgumentos();
+                consumir(")");
+            } else if (proximo.equals(".")) { // Chamada de classe: Classe.metodo(args)
+                consumir(".");
+                consumir(leitor.obterToken()); // nome do método
+                consumir("(");
+                compilarListaArgumentos();
+                consumir(")");
+            }
+        }
         nivelIdentacao--;
         imprimirIdentacao();
         escritor.println("</term>");
