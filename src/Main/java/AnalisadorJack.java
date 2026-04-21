@@ -31,7 +31,7 @@ public class AnalisadorJack {
 
     private static void processarArquivo(File arquivoEntrada) {
         // Agora o nome de saída será .xml (sem o T), conforme pedido pelo professor
-        String nomeSaida = arquivoEntrada.getAbsolutePath().replace(".jack", ".xml");
+        String nomeSaida = arquivoEntrada.getAbsolutePath().replace(".jack", "P.xml");
 
         try {
             // Criamos o seu motor de compilação em português

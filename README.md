@@ -44,10 +44,10 @@ O analisador aceita tanto um arquivo individual quanto um diretório completo. O
 
 ````Bash
 # Processar um único arquivo
-java -cp src AnalisadorJack test/ArrayTest/Main.jack
+java -cp src Main.java.AnalisadorJack test/ArrayTest/Main.jack
 
 # Processar todos os arquivos .jack de uma pasta (Recomendado)
-java -cp src AnalisadorJack test/ArrayTest/
+java -cp src Main.java.AnalisadorJack test/ArrayTest/
 ````
 ## ✅ Validação e Testes
 Para facilitar a correção e garantir que a saída está rigorosamente dentro do padrão exigido pelo curso, utilizamos um script de automação localizado na raiz do projeto.
@@ -65,7 +65,7 @@ O script irá:
 
 * Compilação: Certifica-se de que as classes Java estão atualizadas.
 
-* Execução: Roda o AnalisadorJack sobre as pastas de teste dentro de test/.
+* Execução: Roda o Main.java.AnalisadorJack sobre as pastas de teste dentro de test/.
 
 * Comparação: Chama o TextComparer do Nand2Tetris para validar os arquivos gerados contra o gabarito oficial em nand2tetris/projects/10.
 
@@ -74,12 +74,12 @@ O script irá:
 
 * Compilar as classes Java.
 
-* Rodar o AnalisadorJack sobre as pastas de teste padrão.
+* Rodar o Main.java.AnalisadorJack sobre as pastas de teste padrão.
 
 * Comparar os arquivos gerados com os arquivos de referência (comparação de strings).
 
 ## ⚙️ Detalhamento dos Componentes
 
-* **`AnalisadorJack.java`**: Classe driver que gerencia a entrada de dados. Identifica arquivos `.jack`, coordena o processo de leitura e garante o escapamento correto de caracteres especiais no XML (como `<`, `&`, `>`).
-* **`LeitorLexicoJack.java`**: O núcleo do projeto. Implementa a lógica de tokenização utilizando expressões regulares para classificar os tokens em `Keyword`, `Symbol`, `Identifier`, `IntConst` e `StringConst`, além de ignorar comentários e espaços em branco.
+* **`Main.java.AnalisadorJack.java`**: Classe driver que gerencia a entrada de dados. Identifica arquivos `.jack`, coordena o processo de leitura e garante o escapamento correto de caracteres especiais no XML (como `<`, `&`, `>`).
+* **`Main.java.LeitorLexicoJack.java`**: O núcleo do projeto. Implementa a lógica de tokenização utilizando expressões regulares para classificar os tokens em `Keyword`, `Symbol`, `Identifier`, `IntConst` e `StringConst`, além de ignorar comentários e espaços em branco.
 * **`testa_tudo.bat`**: Script de integração que une o código Java às ferramentas de comparação do curso, permitindo auditoria rápida da conformidade do scanner.

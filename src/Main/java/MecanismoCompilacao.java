@@ -36,15 +36,33 @@ public class MecanismoCompilacao {
         String tipo = leitor.tipoToken();
         String conteudo = leitor.obterToken();
 
-        /////////////////////////////////////////////Escapamento XML///////////////////////////////////////////
+        // 1. Ajuste de Nome da Tag (O Lexer pode retornar minúsculo, mas o XML exige CamelCase)
+        String tagXml;
+        if (tipo.equalsIgnoreCase("stringConstant")) {
+            tagXml = "stringConstant";
+            // 2. Remoção das Aspas: O XML de strings não deve conter as aspas duplas
+            conteudo = conteudo.replace("\"", "");
+        } else if (tipo.equalsIgnoreCase("integerConstant")) {
+            tagXml = "integerConstant";
+        } else if (tipo.equalsIgnoreCase("keyword")) {
+            tagXml = "keyword";
+        } else if (tipo.equalsIgnoreCase("symbol")) {
+            tagXml = "symbol";
+        } else if (tipo.equalsIgnoreCase("identifier")) {
+            tagXml = "identifier";
+        } else {
+            tagXml = tipo; // Caso haja algum outro tipo não mapeado
+        }
+
+        // 3. Escapamento XML: Caracteres que quebram o arquivo XML
         if (conteudo.equals("<")) conteudo = "&lt;";
         else if (conteudo.equals(">")) conteudo = "&gt;";
         else if (conteudo.equals("&")) conteudo = "&amp;";
         else if (conteudo.equals("\"")) conteudo = "&quot;";
 
+        // 4. Impressão: O espaço antes e depois do conteúdo é vital para o TextComparer
         imprimirIdentacao();
-        String tag = tipo.toLowerCase().replace("_", "");
-        escritor.println("<" + tag + "> " + conteudo + " </" + tag + ">");
+        escritor.println("<" + tagXml + "> " + conteudo + " </" + tagXml + ">");
     }
 
     /////////////////////////////////////////////////Regras da Gramática///////////////////////////////////////
