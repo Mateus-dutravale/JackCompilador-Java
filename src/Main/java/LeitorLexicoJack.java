@@ -1,15 +1,12 @@
-/// ///////////////////////////////////////////////Blibliotecas///////////////////////////////////////////////
+package Main.java;
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
-/// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public class LeitorLexicoJack {
-    private String conteudo;
-    private List<String> tokens;
+    private List<Token> tokens;
     private int indiceTokenAtual;
 
-    /// ///////////////////////////////////////////////Dicionário Jack///////////////////////////////////////////
     private static final Set<String> PALAVRAS_CHAVE = new HashSet<>(Arrays.asList(
             "class", "constructor", "function", "method", "field", "static", "var",
             "int", "char", "boolean", "void", "true", "false", "null", "this",
@@ -18,35 +15,65 @@ public class LeitorLexicoJack {
 
     private static final String SIMBOLOS = "{}()[].,;+-*/&|<>=~";
 
-    /// ///////////////////////////////////////////////Construtor///////////////////////////////////////////////
     public LeitorLexicoJack(File arquivoEntrada) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (Scanner scanner = new Scanner(arquivoEntrada)) {
-            while (scanner.hasNextLine()) {
-                sb.append(scanner.nextLine()).append("\n");
-            }
-        }
-
-        // Remove comentários logo na leitura para facilitar a tokenização
-        this.conteudo = sb.toString().replaceAll("//.*|/\\*([\\s\\S]*?)\\*/", " ");
-
         this.tokens = new ArrayList<>();
         this.indiceTokenAtual = -1;
-        tokenizar();
+        tokenizar(arquivoEntrada);
     }
 
-    /// ///////////////////////////////////////////////Tokenização///////////////////////////////////////////////
-    private void tokenizar() {
+    private void tokenizar(File arquivo) throws IOException {
         String regex = "\"[^\"\\n]*\"|[\\{\\}\\(\\)\\[\\]\\.,;+\\-\\*/&\\|<>=~]|\\d+|[\\w_]+";
         Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(this.conteudo);
 
-        while (matcher.find()) {
-            tokens.add(matcher.group());
+        try (BufferedReader br = new BufferedReader(new FileReader(arquivo))) {
+            String linha;
+            int numeroLinha = 1;
+            boolean emComentarioBloco = false;
+
+            while ((linha = br.readLine()) != null) {
+                // Remove comentários de linha (//)
+                int posComentarioLinha = linha.indexOf("//");
+                if (posComentarioLinha != -1) {
+                    linha = linha.substring(0, posComentarioLinha);
+                }
+
+                // Lida com comentários de bloco (/* ... */)
+                linha = linha.replaceAll("/\\*.*?\\*/", " "); // Na mesma linha
+
+                if (emComentarioBloco) {
+                    if (linha.contains("*/")) {
+                        linha = linha.substring(linha.indexOf("*/") + 2);
+                        emComentarioBloco = false;
+                    } else {
+                        numeroLinha++;
+                        continue;
+                    }
+                }
+                if (linha.contains("/*")) {
+                    emComentarioBloco = true;
+                    linha = linha.substring(0, linha.indexOf("/*"));
+                }
+
+                // Extrai os tokens da linha limpa
+                Matcher matcher = pattern.matcher(linha);
+                while (matcher.find()) {
+                    String lexema = matcher.group();
+                    TokenType tipo = identificarTipo(lexema);
+                    tokens.add(new Token(tipo, lexema, numeroLinha));
+                }
+                numeroLinha++;
+            }
         }
     }
 
-    /// ///////////////////////////////////////////////Navegação e Tipos/////////////////////////////////////////
+    private TokenType identificarTipo(String t) {
+        if (PALAVRAS_CHAVE.contains(t)) return TokenType.KEYWORD;
+        if (t.length() == 1 && SIMBOLOS.contains(t)) return TokenType.SYMBOL;
+        if (t.startsWith("\"")) return TokenType.STRING_CONSTANT;
+        if (Character.isDigit(t.charAt(0))) return TokenType.INTEGER_CONSTANT;
+        return TokenType.IDENTIFIER;
+    }
+
     public boolean temMaisTokens() {
         return indiceTokenAtual < tokens.size() - 1;
     }
@@ -57,17 +84,13 @@ public class LeitorLexicoJack {
         }
     }
 
-    public String obterToken() {
+    // Retorna o objeto Token completo (com linha, tipo e lexema)
+    public Token tokenAtual() {
         return tokens.get(indiceTokenAtual);
     }
 
-    public String tipoToken() {
-        String t = obterToken();
-
-        if (PALAVRAS_CHAVE.contains(t)) return "keyword";
-        if (t.length() == 1 && SIMBOLOS.contains(t)) return "symbol";
-        if (t.startsWith("\"")) return "stringConstant";
-        if (Character.isDigit(t.charAt(0))) return "integerConstant";
-        return "identifier";
+    // Métodos de atalho para não quebrar o MecanismoCompilacao imediatamente
+    public String obterLexema() {
+        return tokenAtual().getLexeme();
     }
 }

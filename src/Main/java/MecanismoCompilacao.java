@@ -1,3 +1,4 @@
+package Main.java;
 import java.io.*;
 
 public class MecanismoCompilacao {
@@ -10,7 +11,6 @@ public class MecanismoCompilacao {
         this.leitor = new LeitorLexicoJack(entrada);
         this.escritor = new PrintWriter(saida);
 
-        // Posiciona no primeiro token para iniciar a análise
         if (leitor.temMaisTokens()) {
             leitor.avancar();
         }
@@ -20,6 +20,7 @@ public class MecanismoCompilacao {
     public void fechar() {
         escritor.close();
     }
+
     /////////////////////////////////////////////////Escrita XML///////////////////////////////////////////////
     private void imprimirIdentacao() {
         for (int i = 0; i < nivelIdentacao; i++) escritor.print("  ");
@@ -33,34 +34,37 @@ public class MecanismoCompilacao {
     }
 
     private void escreverToken() {
-        String tipo = leitor.tipoToken();
-        String conteudo = leitor.obterToken();
+        Token token = leitor.tokenAtual();
+        String conteudo = token.getLexeme();
+        TokenType tipoEnum = token.getType();
 
-        // Ajuste de Nome da Tag 
         String tagXml;
-        if (tipo.equalsIgnoreCase("stringConstant")) {
-            tagXml = "stringConstant";
-            //Remoção das Aspas
-            conteudo = conteudo.replace("\"", "");
-        } else if (tipo.equalsIgnoreCase("integerConstant")) {
-            tagXml = "integerConstant";
-        } else if (tipo.equalsIgnoreCase("keyword")) {
-            tagXml = "keyword";
-        } else if (tipo.equalsIgnoreCase("symbol")) {
-            tagXml = "symbol";
-        } else if (tipo.equalsIgnoreCase("identifier")) {
-            tagXml = "identifier";
-        } else {
-            tagXml = tipo; // Caso haja algum outro tipo não mapeado
+        switch (tipoEnum) {
+            case STRING_CONSTANT:
+                tagXml = "stringConstant";
+                conteudo = conteudo.replace("\"", "");
+                break;
+            case INTEGER_CONSTANT:
+                tagXml = "integerConstant";
+                break;
+            case KEYWORD:
+                tagXml = "keyword";
+                break;
+            case SYMBOL:
+                tagXml = "symbol";
+                break;
+            case IDENTIFIER:
+                tagXml = "identifier";
+                break;
+            default:
+                tagXml = "unknown";
         }
 
-        //Escapamento XML
         if (conteudo.equals("<")) conteudo = "&lt;";
         else if (conteudo.equals(">")) conteudo = "&gt;";
         else if (conteudo.equals("&")) conteudo = "&amp;";
         else if (conteudo.equals("\"")) conteudo = "&quot;";
 
-        // Impressão
         imprimirIdentacao();
         escritor.println("<" + tagXml + "> " + conteudo + " </" + tagXml + ">");
     }
@@ -71,17 +75,14 @@ public class MecanismoCompilacao {
         nivelIdentacao++;
 
         consumir("class");
-        consumir(leitor.obterToken());  // Nome da classe (ex: Square, Main)
+        consumir(leitor.obterLexema());
         consumir("{");
 
-        /////////////////////////////////////////////Corpo da Classe///////////////////////////////////////////
-        // Enquanto o token for static ou field, compila as variáveis de classe
-        while (leitor.obterToken().equals("static") || leitor.obterToken().equals("field")) {
+        while (leitor.obterLexema().equals("static") || leitor.obterLexema().equals("field")) {
             compilarVariavelClasse();
         }
 
-        // Enquanto o token for um início de sub-rotina (Parte que o Mateus vai implementar)
-        while (leitor.obterToken().equals("constructor") || leitor.obterToken().equals("function") || leitor.obterToken().equals("method")) {
+        while (leitor.obterLexema().equals("constructor") || leitor.obterLexema().equals("function") || leitor.obterLexema().equals("method")) {
             compilarSubRotina();
         }
 
@@ -90,19 +91,19 @@ public class MecanismoCompilacao {
         nivelIdentacao--;
         escritor.println("</class>");
     }
+
     public void compilarVariavelClasse() {
         imprimirIdentacao();
         escritor.println("<classVarDec>");
         nivelIdentacao++;
 
-        consumir(leitor.obterToken()); // Consome 'static' ou 'field'
-        consumir(leitor.obterToken()); // Consome o tipo (int, char, boolean, etc)
-        consumir(leitor.obterToken()); // Consome o primeiro nome da variável
+        consumir(leitor.obterLexema());
+        consumir(leitor.obterLexema());
+        consumir(leitor.obterLexema());
 
-        // Se tiver vírgula, significa que tem mais variáveis na mesma linha
-        while (leitor.obterToken().equals(",")) {
+        while (leitor.obterLexema().equals(",")) {
             consumir(",");
-            consumir(leitor.obterToken()); // Consome o próximo nome
+            consumir(leitor.obterLexema());
         }
 
         consumir(";");
@@ -111,15 +112,16 @@ public class MecanismoCompilacao {
         imprimirIdentacao();
         escritor.println("</classVarDec>");
     }
+
     /////////////////////////////////////////////////Sub-rotinas///////////////////////////////////////////////
     public void compilarSubRotina() {
         imprimirIdentacao();
         escritor.println("<subroutineDec>");
         nivelIdentacao++;
 
-        consumir(leitor.obterToken());
-        consumir(leitor.obterToken());
-        consumir(leitor.obterToken());
+        consumir(leitor.obterLexema());
+        consumir(leitor.obterLexema());
+        consumir(leitor.obterLexema());
 
         consumir("(");
         compilarListaParametros();
@@ -136,16 +138,14 @@ public class MecanismoCompilacao {
         escritor.println("<parameterList>");
         nivelIdentacao++;
 
-        // Se o próximo token não for ')', então existem parâmetros
-        if (!leitor.obterToken().equals(")")) {
-            consumir(leitor.obterToken()); // tipo
-            consumir(leitor.obterToken()); // nomeVar
+        if (!leitor.obterLexema().equals(")")) {
+            consumir(leitor.obterLexema());
+            consumir(leitor.obterLexema());
 
-            // Se houver vírgula, existem mais parâmetros
-            while (leitor.obterToken().equals(",")) {
+            while (leitor.obterLexema().equals(",")) {
                 consumir(",");
-                consumir(leitor.obterToken()); // tipo
-                consumir(leitor.obterToken()); // nomeVar
+                consumir(leitor.obterLexema());
+                consumir(leitor.obterLexema());
             }
         }
 
@@ -161,12 +161,10 @@ public class MecanismoCompilacao {
 
         consumir("{");
 
-        // Primeiro, trata as declarações de variáveis locais (var int x;)
-        while (leitor.obterToken().equals("var")) {
+        while (leitor.obterLexema().equals("var")) {
             compilarVariavel();
         }
 
-        // Depois, trata os comandos (let, if, while, etc.)
         compilarStatements();
 
         consumir("}");
@@ -182,12 +180,12 @@ public class MecanismoCompilacao {
         nivelIdentacao++;
 
         consumir("var");
-        consumir(leitor.obterToken()); // tipo
-        consumir(leitor.obterToken()); // varName
+        consumir(leitor.obterLexema());
+        consumir(leitor.obterLexema());
 
-        while (leitor.obterToken().equals(",")) {
+        while (leitor.obterLexema().equals(",")) {
             consumir(",");
-            consumir(leitor.obterToken()); // outro varName
+            consumir(leitor.obterLexema());
         }
         consumir(";");
 
@@ -201,27 +199,27 @@ public class MecanismoCompilacao {
         escritor.println("<statements>");
         nivelIdentacao++;
 
-        // Loop para identificar qual comando processar
         while (true) {
-            String token = leitor.obterToken();
+            String token = leitor.obterLexema();
             if (token.equals("let")) compilarLet();
             else if (token.equals("if")) compilarSe();
             else if (token.equals("while")) compilarEnquanto();
             else if (token.equals("do")) compilarFazer();
             else if (token.equals("return")) compilarRetorno();
-            else break; // Se não for nenhum desses, os comandos acabaram
+            else break;
         }
         nivelIdentacao--;
         imprimirIdentacao();
         escritor.println("</statements>");
     }
+
     public void compilarLet() {
         imprimirIdentacao();
         escritor.println("<letStatement>");
         nivelIdentacao++;
         consumir("let");
-        consumir(leitor.obterToken()); // nomeVar
-        if (leitor.obterToken().equals("[")) {
+        consumir(leitor.obterLexema());
+        if (leitor.obterLexema().equals("[")) {
             consumir("[");
             compilarExpressao();
             consumir("]");
@@ -233,6 +231,7 @@ public class MecanismoCompilacao {
         imprimirIdentacao();
         escritor.println("</letStatement>");
     }
+
     public void compilarSe() {
         imprimirIdentacao();
         escritor.println("<ifStatement>");
@@ -240,19 +239,17 @@ public class MecanismoCompilacao {
 
         consumir("if");
         consumir("(");
-        compilarExpressao(); // Chama a lógica da Fase 3
+        compilarExpressao();
         consumir(")");
 
         consumir("{");
-        compilarStatements(); // Aqui a mágica acontece: ele volta a ler comandos dentro do IF
+        compilarStatements();
         consumir("}");
 
-        /////////////////////////////////////////////Tratamento do ELSE////////////////////////////////////////
-        // O else é opcional, então verificamos se ele existe antes de consumir
-        if (leitor.obterToken().equals("else")) {
+        if (leitor.obterLexema().equals("else")) {
             consumir("else");
             consumir("{");
-            compilarStatements(); // Recursividade novamente para o bloco else
+            compilarStatements();
             consumir("}");
         }
 
@@ -270,7 +267,7 @@ public class MecanismoCompilacao {
         compilarExpressao();
         consumir(")");
         consumir("{");
-        compilarStatements(); // Recursividade!
+        compilarStatements();
         consumir("}");
         nivelIdentacao--;
         imprimirIdentacao();
@@ -282,11 +279,11 @@ public class MecanismoCompilacao {
         escritor.println("<doStatement>");
         nivelIdentacao++;
         consumir("do");
-        // Aqui chamamos uma expressão de chamada de função (mesma lógica do Termo)
-        consumir(leitor.obterToken());
-        if (leitor.obterToken().equals(".")) {
+
+        consumir(leitor.obterLexema());
+        if (leitor.obterLexema().equals(".")) {
             consumir(".");
-            consumir(leitor.obterToken());
+            consumir(leitor.obterLexema());
         }
         consumir("(");
         compilarListaArgumentos();
@@ -302,7 +299,7 @@ public class MecanismoCompilacao {
         escritor.println("<returnStatement>");
         nivelIdentacao++;
         consumir("return");
-        if (!leitor.obterToken().equals(";")) {
+        if (!leitor.obterLexema().equals(";")) {
             compilarExpressao();
         }
         consumir(";");
@@ -320,10 +317,9 @@ public class MecanismoCompilacao {
 
         compilarTermo();
 
-        // Se houver um operador (+, -, *, / etc), ele processa o próximo termo
         String operadores = "+-*/&|<>=";
         while (leitor.temMaisTokens()) {
-            String tokenAtual = leitor.obterToken();
+            String tokenAtual = leitor.obterLexema();
             if (tokenAtual.length() == 1 && operadores.contains(tokenAtual)) {
                 consumir(tokenAtual);
                 compilarTermo();
@@ -342,12 +338,10 @@ public class MecanismoCompilacao {
         escritor.println("<expressionList>");
         nivelIdentacao++;
 
-        // Se o próximo token não for ')', significa que há argumentos (expressões)
-        if (!leitor.obterToken().equals(")")) {
+        if (!leitor.obterLexema().equals(")")) {
             compilarExpressao();
 
-            // Enquanto houver vírgula, continua processando as expressões
-            while (leitor.obterToken().equals(",")) {
+            while (leitor.obterLexema().equals(",")) {
                 consumir(",");
                 compilarExpressao();
             }
@@ -365,41 +359,37 @@ public class MecanismoCompilacao {
         escritor.println("<term>");
         nivelIdentacao++;
 
-        String token = leitor.obterToken();
-        String tipo = leitor.tipoToken();
+        TokenType tipo = leitor.tokenAtual().getType();
+        String tokenStr = leitor.obterLexema();
 
-        //Constantes e Palavras-chave (true, false, null, this)
-        if (tipo.equals("integerConstant") || tipo.equals("stringConstant") ||
-                token.equals("true") || token.equals("false") || token.equals("null") || token.equals("this")) {
-            consumir(token);
+        if (tipo == TokenType.INTEGER_CONSTANT || tipo == TokenType.STRING_CONSTANT ||
+                tokenStr.equals("true") || tokenStr.equals("false") || tokenStr.equals("null") || tokenStr.equals("this")) {
+            consumir(tokenStr);
         }
-        //Expressões entre parênteses 
-        else if (token.equals("(")) {
+        else if (tokenStr.equals("(")) {
             consumir("(");
             compilarExpressao();
             consumir(")");
         }
-        //Operadores Unários (-x ou ~y)
-        else if (token.equals("-") || token.equals("~")) {
-            consumir(token);
+        else if (tokenStr.equals("-") || tokenStr.equals("~")) {
+            consumir(tokenStr);
             compilarTermo();
         }
-        //Identificadores (Variáveis, Arrays ou Chamadas de Método)
         else {
-            consumir(token); // Consome o nome (da var ou da classe/método)
+            consumir(tokenStr);
 
-            String proximo = leitor.obterToken();
-            if (proximo.equals("[")) { // É um Array
+            String proximo = leitor.obterLexema();
+            if (proximo.equals("[")) {
                 consumir("[");
                 compilarExpressao();
                 consumir("]");
-            } else if (proximo.equals("(")) { // Chamada direta: metodo(args)
+            } else if (proximo.equals("(")) {
                 consumir("(");
                 compilarListaArgumentos();
                 consumir(")");
-            } else if (proximo.equals(".")) { // Chamada de classe: Classe.metodo(args)
+            } else if (proximo.equals(".")) {
                 consumir(".");
-                consumir(leitor.obterToken()); // nome do método
+                consumir(leitor.obterLexema());
                 consumir("(");
                 compilarListaArgumentos();
                 consumir(")");
@@ -409,5 +399,4 @@ public class MecanismoCompilacao {
         imprimirIdentacao();
         escritor.println("</term>");
     }
-
 }
