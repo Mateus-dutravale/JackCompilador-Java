@@ -32,20 +32,20 @@ public class AnalisadorJack {
 
     private static void processarArquivo(File arquivoEntrada) {
         // Agora o nome de saída será .xml (sem o T), conforme pedido pelo professor
-        String nomeSaida = arquivoEntrada.getAbsolutePath().replace(".jack", "P.xml");
+        String nomeSaida = arquivoEntrada.getAbsolutePath().replace(".jack", ".vm");
 
         try {
             // Criamos o seu motor de compilação em português
             MecanismoCompilacao motor = new MecanismoCompilacao(arquivoEntrada, new File(nomeSaida));
 
             // Chamamos a função inicial que você criou (Passo 3)
-            System.out.println("Compilando estrutura sintática: " + arquivoEntrada.getName());
+            System.out.println("Compilando estrutura: " + arquivoEntrada.getName());
             motor.compilarClasse();
 
             // Fecha o arquivo para salvar as alterações
             motor.fechar();
 
-            System.out.println("Arquivo XML gerado com sucesso: " + nomeSaida);
+            System.out.println("Arquivo .VM gerado com sucesso: " + nomeSaida);
 
         } catch (IOException e) {
             System.err.println("Erro ao processar o analisador sintático: " + e.getMessage());

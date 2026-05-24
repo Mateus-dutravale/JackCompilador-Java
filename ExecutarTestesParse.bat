@@ -9,14 +9,14 @@ echo ======================================================
 
 echo.
 echo [TESTE 1] ArrayTest...
-call "%COMPARER%" "%ORIGINAIS%\ArrayTest\Main.xml" "test\ArrayTest\MainP.xml"
+call "%COMPARER%" "%ORIGINAIS%\ArrayTest\Main.xml" "test\10_test\ArrayTest\MainP.xml"
 
 echo.
 echo [TESTE 2] Square (Main)...
-call "%COMPARER%" "%ORIGINAIS%\Square\Main.xml" "test\SquareTest\MainP.xml"
+call "%COMPARER%" "%ORIGINAIS%\Square\Main.xml" "test\10_test\SquareTest\MainP.xml"
 
 echo.
 echo [TESTE 3] ExpressionLessSquare (Main)...
-call "%COMPARER%" "%ORIGINAIS%\ExpressionLessSquare\Main.xml" "test\ExpressionLessSquareTest\MainP.xml"
+call "%COMPARER%" "%ORIGINAIS%\ExpressionLessSquare\Main.xml" "test\10_test\ExpressionLessSquareTest\MainP.xml"
 
 pause

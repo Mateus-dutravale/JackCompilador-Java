@@ -21,10 +21,10 @@ A organização do repositório garante que os scripts de teste funcionem de for
 JackCompilador-Java/
 ├── nand2tetris/            # Ferramentas e gabaritos oficiais
 ├── src/Main/java/          # Código-fonte (Analisador, Leitor e Mecanismo)
-├── test/                   # Pastas de teste (ArrayTest, SquareTest, etc.)
+├── test/                   # Pastas de teste (11_test: Seven, Square, Pong, etc.)
 ├── .gitignore              # Arquivos ignorados pelo Git
 ├── README.md               # Documentação
-└── ExecutarTestesParse.bat # Script de validação automática do Parser
+└── CompilarFase11.bat      # Script de automação e compilação do projeto
 ```
 ## 🚀 Instruções para Compilar e Executar
 
@@ -52,57 +52,44 @@ java AnalisadorJack "../../../test/ArrayTest/"
 ```
 ## ✅ Validação e Testes Oficiais
 
-Para garantir que a saída está rigorosamente dentro do padrão exigido pelo curso (**comparação bit-a-bit**), utilizamos o script de automação localizado na raiz do projeto.
-
-### **Utilizando o `ExecutarTestesParse.bat`**
-
-Este arquivo é o validador oficial da Unidade 1.  
-Ele automatiza a comparação dos resultados gerados pelo código com os arquivos de referência do MIT.
+Para garantir a geração correta do código, desenvolvemos um script de automação que processa todos os programas de teste simultaneamente.
 
 No terminal (na raiz do projeto), execute:
 
 ```bash
-.\ExecutarTestesParse.bat
+.\ExecutaTestesVM.bat
 ```
-### **O que o script realiza**
+### **1. O que o script realiza**
 
-* **Comparação:** chama o `TextComparer` do Nand2Tetris
-* **Validação:** compara o arquivo gerado (ex: `MainP.xml`) com o gabarito oficial em `nand2tetris/projects/10`
-* **Resultado:** exibe `Comparison ended successfully` para cada teste aprovado
+* **Build Automático:** Compila todas as classes Java presentes na pasta `src/Main/java`.
+* **Processamento em Lote:** Percorre os diretórios em `test/11_test` (Seven, Square, Average, etc.).
+* **Geração VM:** Instancia o compilador para ler os arquivos `.jack` e gerar os correspondentes `.vm` de saída na mesma pasta.
+
+### **2. Emulação do Código Gerado**
+
+Para testar a validade da tradução gerada pelo nosso compilador:
+1. Abra a ferramenta **`VMEmulator.bat`** (localizada em `nand2tetris/tools`).
+2. Utilize o botão **Load Program** para carregar uma das pastas processadas (ex: `test/11_test/Pong`).
+3. Ajuste a velocidade para "Fast" e execute para visualizar o software final rodando no emulador da plataforma.
 
 ## ⚙️ Detalhamento dos Componentes
 
-### **AnalisadorJack.java**
-
-Classe driver que gerencia a entrada.  
-Localiza arquivos `.jack`, define o nome de saída como `P.xml` e coordena o início da compilação.
-
 ### **MecanismoCompilacao.java**
+O núcleo do compilador. Transita a árvore sintática gerando código de máquina. Lida com a resolução de expressões (notação pós-fixada), controle de fluxo (geração de *labels* para `if`/`while`), instanciamento de objetos e cálculo de endereçamento para *Arrays*.
 
-O núcleo do Parser.  
-Implementa a descida recursiva para processar a gramática Jack, gerando a estrutura XML identada e tratando o escapamento de caracteres especiais:
+### **TabelaSimbolos.java**
+Responsável pelo gerenciamento de escopo e memória.
+Mantém registro de variáveis estáticas e campos de classe, além de argumentos e variáveis locais atreladas a sub-rotinas específicas, fornecendo os índices cruciais para as instruções VM (`local 0`, `argument 1`).
 
-* `<`
-* `>`
-* `&`
-* `"`
+### **EscritorVM.java**
+Interface de abstração para saída de dados. Simplifica e padroniza a geração dos comandos da máquina virtual (como `push`, `pop`, `call`, `if-goto`), mantendo a classe principal limpa e legível.
 
-### **LeitorLexicoJack.java**
-
-Responsável pela tokenização, classificando os elementos em:
-
-* `keyword`
-* `symbol`
-* `identifier`
-* `integerConstant`
-* `stringConstant`
-
-### **ExecutarTestesParse.bat**
-
-Script de integração que automatiza a auditoria de conformidade do analisador sintático.
+### **AnalisadorJack.java e LeitorLexicoJack.java**
+Classes base que gerenciam a entrada, tokenizando a linguagem Jack e configurando os caminhos de saída para a extensão final `.vm`.
 
 ## ✨ Destaques da Implementação
 
-* **Tratamento de Strings:** remoção de aspas duplas no conteúdo das tags `<stringConstant>`
-* **Recursividade:** processamento de expressões, termos e declarações de sub-rotinas
-* **Saída XML:** geração de arquivos com identação hierárquica para representação da árvore sintática
+* **Notação Pós-Fixada:** Tradução limpa de expressões matemáticas e lógicas usando a Máquina de Pilha.
+* **Manipulação Limpa de Ponteiros:** Cálculo nativo de memória para operações de *Arrays* usando o segmento `THAT`.
+* **Tratamento de Strings:** Chamada dinâmica ao SO (`String.new` e `String.appendChar`) para converter literais em instâncias de caracteres de forma procedimental.
+* **Automação:** Fluxo de construção integrado (Build + Execução) em um único `.bat`.
