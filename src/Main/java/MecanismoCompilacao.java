@@ -3,13 +3,15 @@ import java.io.*;
 
 public class MecanismoCompilacao {
     private LeitorLexicoJack leitor;
-    private PrintWriter escritor;
-    private int nivelIdentacao = 0;
+    private EscritorVM escritor;
+    private TabelaSimbolos tabela;
+    private String nomeClasseAtual;
 
     /////////////////////////////////////////////////Construtor///////////////////////////////////////////////
     public MecanismoCompilacao(File entrada, File saida) throws IOException {
         this.leitor = new LeitorLexicoJack(entrada);
-        this.escritor = new PrintWriter(saida);
+        this.escritor = new EscritorVM(saida);
+        this.tabela = new TabelaSimbolos();
 
         if (leitor.temMaisTokens()) {
             leitor.avancar();
@@ -18,64 +20,22 @@ public class MecanismoCompilacao {
 
     /////////////////////////////////////////////////Finalização///////////////////////////////////////////////
     public void fechar() {
-        escritor.close();
+        escritor.fechar();
     }
 
-    /////////////////////////////////////////////////Escrita XML///////////////////////////////////////////////
-    private void imprimirIdentacao() {
-        for (int i = 0; i < nivelIdentacao; i++) escritor.print("  ");
-    }
-
+    /////////////////////////////////////////////////Auxiliares///////////////////////////////////////////////
     private void consumir(String esperado) {
-        escreverToken();
         if (leitor.temMaisTokens()) {
             leitor.avancar();
         }
     }
 
-    private void escreverToken() {
-        Token token = leitor.tokenAtual();
-        String conteudo = token.getLexeme();
-        TokenType tipoEnum = token.getType();
-
-        String tagXml;
-        switch (tipoEnum) {
-            case STRING_CONSTANT:
-                tagXml = "stringConstant";
-                conteudo = conteudo.replace("\"", "");
-                break;
-            case INTEGER_CONSTANT:
-                tagXml = "integerConstant";
-                break;
-            case KEYWORD:
-                tagXml = "keyword";
-                break;
-            case SYMBOL:
-                tagXml = "symbol";
-                break;
-            case IDENTIFIER:
-                tagXml = "identifier";
-                break;
-            default:
-                tagXml = "unknown";
-        }
-
-        if (conteudo.equals("<")) conteudo = "&lt;";
-        else if (conteudo.equals(">")) conteudo = "&gt;";
-        else if (conteudo.equals("&")) conteudo = "&amp;";
-        else if (conteudo.equals("\"")) conteudo = "&quot;";
-
-        imprimirIdentacao();
-        escritor.println("<" + tagXml + "> " + conteudo + " </" + tagXml + ">");
-    }
-
     /////////////////////////////////////////////////Regras da Gramática///////////////////////////////////////
     public void compilarClasse() {
-        escritor.println("<class>");
-        nivelIdentacao++;
-
         consumir("class");
-        consumir(leitor.obterLexema());
+
+        nomeClasseAtual = leitor.obterLexema();
+        consumir(nomeClasseAtual);
         consumir("{");
 
         while (leitor.obterLexema().equals("static") || leitor.obterLexema().equals("field")) {
@@ -87,78 +47,78 @@ public class MecanismoCompilacao {
         }
 
         consumir("}");
-
-        nivelIdentacao--;
-        escritor.println("</class>");
     }
 
     public void compilarVariavelClasse() {
-        imprimirIdentacao();
-        escritor.println("<classVarDec>");
-        nivelIdentacao++;
+        String kindStr = leitor.obterLexema();
+        TabelaSimbolos.Kind kind = kindStr.equals("static") ? TabelaSimbolos.Kind.STATIC : TabelaSimbolos.Kind.FIELD;
+        consumir(kindStr);
 
-        consumir(leitor.obterLexema());
-        consumir(leitor.obterLexema());
-        consumir(leitor.obterLexema());
+        String tipo = leitor.obterLexema();
+        consumir(tipo);
+
+        String nome = leitor.obterLexema();
+        consumir(nome);
+
+        tabela.definir(nome, tipo, kind); // Salva na tabela!
 
         while (leitor.obterLexema().equals(",")) {
             consumir(",");
-            consumir(leitor.obterLexema());
+            nome = leitor.obterLexema();
+            consumir(nome);
+            tabela.definir(nome, tipo, kind); // Salva as extras na tabela!
         }
 
         consumir(";");
-
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</classVarDec>");
     }
 
     /////////////////////////////////////////////////Sub-rotinas///////////////////////////////////////////////
     public void compilarSubRotina() {
-        imprimirIdentacao();
-        escritor.println("<subroutineDec>");
-        nivelIdentacao++;
+        tabela.iniciarSubrotina(); // Limpa a tabela para a nova sub-rotina
 
-        consumir(leitor.obterLexema());
-        consumir(leitor.obterLexema());
-        consumir(leitor.obterLexema());
+        String tipoSubrotina = leitor.obterLexema(); // constructor, function ou method
+        consumir(tipoSubrotina);
+
+        // Se for um método, o 'this' é implicitamente o primeiro argumento (índice 0)
+        if (tipoSubrotina.equals("method")) {
+            tabela.definir("this", nomeClasseAtual, TabelaSimbolos.Kind.ARG);
+        }
+
+        String tipoRetorno = leitor.obterLexema();
+        consumir(tipoRetorno);
+
+        String nomeSubrotina = leitor.obterLexema();
+        consumir(nomeSubrotina);
 
         consumir("(");
         compilarListaParametros();
         consumir(")");
-        compilarCorpoSubrotina();
 
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</subroutineDec>");
+        compilarCorpoSubrotina();
     }
 
     public void compilarListaParametros() {
-        imprimirIdentacao();
-        escritor.println("<parameterList>");
-        nivelIdentacao++;
-
         if (!leitor.obterLexema().equals(")")) {
-            consumir(leitor.obterLexema());
-            consumir(leitor.obterLexema());
+            String tipo = leitor.obterLexema();
+            consumir(tipo);
+
+            String nome = leitor.obterLexema();
+            consumir(nome);
+            tabela.definir(nome, tipo, TabelaSimbolos.Kind.ARG);
 
             while (leitor.obterLexema().equals(",")) {
                 consumir(",");
-                consumir(leitor.obterLexema());
-                consumir(leitor.obterLexema());
+                tipo = leitor.obterLexema();
+                consumir(tipo);
+
+                nome = leitor.obterLexema();
+                consumir(nome);
+                tabela.definir(nome, tipo, TabelaSimbolos.Kind.ARG);
             }
         }
-
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</parameterList>");
     }
 
     public void compilarCorpoSubrotina() {
-        imprimirIdentacao();
-        escritor.println("<subroutineBody>");
-        nivelIdentacao++;
-
         consumir("{");
 
         while (leitor.obterLexema().equals("var")) {
@@ -168,37 +128,28 @@ public class MecanismoCompilacao {
         compilarStatements();
 
         consumir("}");
-
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</subroutineBody>");
     }
 
     public void compilarVariavel() {
-        imprimirIdentacao();
-        escritor.println("<varDec>");
-        nivelIdentacao++;
-
         consumir("var");
-        consumir(leitor.obterLexema());
-        consumir(leitor.obterLexema());
+
+        String tipo = leitor.obterLexema();
+        consumir(tipo);
+
+        String nome = leitor.obterLexema();
+        consumir(nome);
+        tabela.definir(nome, tipo, TabelaSimbolos.Kind.VAR);
 
         while (leitor.obterLexema().equals(",")) {
             consumir(",");
-            consumir(leitor.obterLexema());
+            nome = leitor.obterLexema();
+            consumir(nome);
+            tabela.definir(nome, tipo, TabelaSimbolos.Kind.VAR);
         }
         consumir(";");
-
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</varDec>");
     }
 
     public void compilarStatements() {
-        imprimirIdentacao();
-        escritor.println("<statements>");
-        nivelIdentacao++;
-
         while (true) {
             String token = leitor.obterLexema();
             if (token.equals("let")) compilarLet();
@@ -208,15 +159,9 @@ public class MecanismoCompilacao {
             else if (token.equals("return")) compilarRetorno();
             else break;
         }
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</statements>");
     }
 
     public void compilarLet() {
-        imprimirIdentacao();
-        escritor.println("<letStatement>");
-        nivelIdentacao++;
         consumir("let");
         consumir(leitor.obterLexema());
         if (leitor.obterLexema().equals("[")) {
@@ -227,16 +172,9 @@ public class MecanismoCompilacao {
         consumir("=");
         compilarExpressao();
         consumir(";");
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</letStatement>");
     }
 
     public void compilarSe() {
-        imprimirIdentacao();
-        escritor.println("<ifStatement>");
-        nivelIdentacao++;
-
         consumir("if");
         consumir("(");
         compilarExpressao();
@@ -252,16 +190,9 @@ public class MecanismoCompilacao {
             compilarStatements();
             consumir("}");
         }
-
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</ifStatement>");
     }
 
     public void compilarEnquanto() {
-        imprimirIdentacao();
-        escritor.println("<whileStatement>");
-        nivelIdentacao++;
         consumir("while");
         consumir("(");
         compilarExpressao();
@@ -269,17 +200,10 @@ public class MecanismoCompilacao {
         consumir("{");
         compilarStatements();
         consumir("}");
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</whileStatement>");
     }
 
     public void compilarFazer() {
-        imprimirIdentacao();
-        escritor.println("<doStatement>");
-        nivelIdentacao++;
         consumir("do");
-
         consumir(leitor.obterLexema());
         if (leitor.obterLexema().equals(".")) {
             consumir(".");
@@ -289,32 +213,18 @@ public class MecanismoCompilacao {
         compilarListaArgumentos();
         consumir(")");
         consumir(";");
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</doStatement>");
     }
 
     public void compilarRetorno() {
-        imprimirIdentacao();
-        escritor.println("<returnStatement>");
-        nivelIdentacao++;
         consumir("return");
         if (!leitor.obterLexema().equals(";")) {
             compilarExpressao();
         }
         consumir(";");
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</returnStatement>");
     }
 
     /////////////////////////////////////////////////Expressões (Base)/////////////////////////////////////////
-
     public void compilarExpressao() {
-        imprimirIdentacao();
-        escritor.println("<expression>");
-        nivelIdentacao++;
-
         compilarTermo();
 
         String operadores = "+-*/&|<>=";
@@ -327,17 +237,9 @@ public class MecanismoCompilacao {
                 break;
             }
         }
-
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</expression>");
     }
 
     public void compilarListaArgumentos() {
-        imprimirIdentacao();
-        escritor.println("<expressionList>");
-        nivelIdentacao++;
-
         if (!leitor.obterLexema().equals(")")) {
             compilarExpressao();
 
@@ -346,19 +248,10 @@ public class MecanismoCompilacao {
                 compilarExpressao();
             }
         }
-
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</expressionList>");
     }
 
     /////////////////////////////////////////////////Termos (Base)/////////////////////////////////////////////
-
     public void compilarTermo() {
-        imprimirIdentacao();
-        escritor.println("<term>");
-        nivelIdentacao++;
-
         TokenType tipo = leitor.tokenAtual().getType();
         String tokenStr = leitor.obterLexema();
 
@@ -395,8 +288,5 @@ public class MecanismoCompilacao {
                 consumir(")");
             }
         }
-        nivelIdentacao--;
-        imprimirIdentacao();
-        escritor.println("</term>");
     }
 }
