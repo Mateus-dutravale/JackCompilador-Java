@@ -91,11 +91,13 @@ public class MecanismoCompilacao {
         String nomeSubrotina = leitor.obterLexema();
         consumir(nomeSubrotina);
 
+        String nomeFuncaoCompleto = nomeClasseAtual + "." + nomeSubrotina;
+
         consumir("(");
         compilarListaParametros();
         consumir(")");
 
-        compilarCorpoSubrotina();
+        compilarCorpoSubrotina(nomeFuncaoCompleto, tipoSubrotina);
     }
 
     public void compilarListaParametros() {
@@ -119,11 +121,30 @@ public class MecanismoCompilacao {
         }
     }
 
-    public void compilarCorpoSubrotina() {
+    public void compilarCorpoSubrotina(String nomeFuncaoCompleto, String tipoSubrotina) {
         consumir("{");
 
         while (leitor.obterLexema().equals("var")) {
             compilarVariavel();
+        }
+
+        // DECLARAÇÃO DA FUNÇÕA
+        int numVariaveisLocais = tabela.contagemVariaveis(TabelaSimbolos.Kind.VAR);
+        escritor.escreverFuncao(nomeFuncaoCompleto, numVariaveisLocais);
+
+        // ALOCAÇÃO DE MEMÓRIA
+        if (tipoSubrotina.equals("method")) {
+            escritor.escreverPush("argument", 0);
+            escritor.escreverPop("pointer", 0);
+
+        } else if (tipoSubrotina.equals("constructor")) {
+            // VER O QUANTO DE ALOCAÇÃO É NECESSARIO PRA CRIAR O CONSTRUCTUOR
+
+            int tamanhoObjeto = tabela.contagemVariaveis(TabelaSimbolos.Kind.FIELD);
+            escritor.escreverPush("constant", tamanhoObjeto);
+            escritor.escreverChamada("Memory.alloc", 1);
+
+            escritor.escreverPop("pointer", 0);
         }
 
         compilarStatements();
