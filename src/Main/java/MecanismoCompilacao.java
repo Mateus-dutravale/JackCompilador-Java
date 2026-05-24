@@ -284,7 +284,7 @@ public class MecanismoCompilacao {
     public void compilarFazer() {
         consumir("do");
 
-        // 1. Pega o primeiro nome (pode ser a função, a classe ou o objeto)
+        // Pega o primeiro nome (pode ser a função, a classe ou o objeto)
         String nome = leitor.obterLexema();
         consumir(nome);
 
@@ -304,7 +304,7 @@ public class MecanismoCompilacao {
                 nArgs = 1;
                 nomeFuncao = tipoObj + "." + subNome;
             } else {
-                // É uma chamada de Classe direto (ex: Math.multiply)
+                // É uma chamada de Classe direto
                 nomeFuncao = nome + "." + subNome;
             }
         } else {
@@ -320,10 +320,10 @@ public class MecanismoCompilacao {
         consumir(")");
         consumir(";");
 
-        // 3. Efetua a chamada na VM
+        // Efetua a chamada na VM
         escritor.escreverChamada(nomeFuncao, nArgs);
 
-        // 4. A REGRA DE OURO DO DO: Joga fora o valor de retorno!
+        // A REGRA DE OURO DO DO: Joga fora o valor de retorno!
         escritor.escreverPop("temp", 0);
     }
 
