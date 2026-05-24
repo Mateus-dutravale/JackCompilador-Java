@@ -163,15 +163,41 @@ public class MecanismoCompilacao {
 
     public void compilarLet() {
         consumir("let");
-        consumir(leitor.obterLexema());
+
+        // 1. Descobre quem é a variável que vai receber o valor
+        String nomeVariavel = leitor.obterLexema();
+        consumir(nomeVariavel);
+
+        boolean ehArray = false;
         if (leitor.obterLexema().equals("[")) {
+            ehArray = true;
             consumir("[");
-            compilarExpressao();
+            compilarExpressao(); // Avalia o índice do array
             consumir("]");
         }
+
         consumir("=");
+
+        // 2. Resolve a matemática do lado direito do igual (joga o resultado na pilha)
         compilarExpressao();
+
         consumir(";");
+
+        // 3. Tira o resultado da pilha e salva na variável certa usando a Tabela!
+        if (!ehArray) {
+            TabelaSimbolos.Kind kind = tabela.kindDe(nomeVariavel);
+            int indice = tabela.indiceDe(nomeVariavel);
+
+            switch (kind) {
+                case STATIC: escritor.escreverPop("static", indice); break;
+                case FIELD:  escritor.escreverPop("this", indice); break;
+                case VAR:    escritor.escreverPop("local", indice); break;
+                case ARG:    escritor.escreverPop("argument", indice); break;
+                default: break;
+            }
+        } else {
+            // Lógica de salvar em Arrays (a[i] = x).
+        }
     }
 
     public void compilarSe() {
@@ -224,39 +250,84 @@ public class MecanismoCompilacao {
     }
 
     /////////////////////////////////////////////////Expressões (Base)/////////////////////////////////////////
+
     public void compilarExpressao() {
-        compilarTermo();
+        compilarTermo(); // Empilha o primeiro número/variável
 
         String operadores = "+-*/&|<>=";
         while (leitor.temMaisTokens()) {
-            String tokenAtual = leitor.obterLexema();
-            if (tokenAtual.length() == 1 && operadores.contains(tokenAtual)) {
-                consumir(tokenAtual);
-                compilarTermo();
+            String op = leitor.obterLexema();
+            if (op.length() == 1 && operadores.contains(op)) {
+                consumir(op);
+                compilarTermo(); // Empilha o segundo número/variável
+
+                // Agora que os dois estão na pilha, chamamos a operação
+                switch (op) {
+                    case "+": escritor.escreverAritmetica("add"); break;
+                    case "-": escritor.escreverAritmetica("sub"); break;
+                    case "*": escritor.escreverChamada("Math.multiply", 2); break;
+                    case "/": escritor.escreverChamada("Math.divide", 2); break;
+                    case "&": escritor.escreverAritmetica("and"); break;
+                    case "|": escritor.escreverAritmetica("or"); break;
+                    case "<": escritor.escreverAritmetica("lt"); break;
+                    case ">": escritor.escreverAritmetica("gt"); break;
+                    case "=": escritor.escreverAritmetica("eq"); break;
+                }
             } else {
                 break;
             }
         }
     }
 
+    // Auxiliar para a Geração de Código: Busca a variável na tabela e empilha o segmento correto
+    private void escreverPushDaTabela(String nome) {
+        TabelaSimbolos.Kind kind = tabela.kindDe(nome);
+        int indice = tabela.indiceDe(nome);
+
+        switch (kind) {
+            case STATIC: escritor.escreverPush("static", indice); break;
+            case FIELD: escritor.escreverPush("this", indice); break;
+            case VAR: escritor.escreverPush("local", indice); break;
+            case ARG: escritor.escreverPush("argument", indice); break;
+            default: break; // Se não estiver na tabela, pode ser um nome de Classe ou Função
+        }
+    }
+
     public void compilarListaArgumentos() {
+        int nArgs = 0;
         if (!leitor.obterLexema().equals(")")) {
             compilarExpressao();
+            nArgs++;
 
             while (leitor.obterLexema().equals(",")) {
                 consumir(",");
                 compilarExpressao();
+                nArgs++;
             }
         }
     }
 
     /////////////////////////////////////////////////Termos (Base)/////////////////////////////////////////////
+
     public void compilarTermo() {
         TokenType tipo = leitor.tokenAtual().getType();
         String tokenStr = leitor.obterLexema();
 
-        if (tipo == TokenType.INTEGER_CONSTANT || tipo == TokenType.STRING_CONSTANT ||
-                tokenStr.equals("true") || tokenStr.equals("false") || tokenStr.equals("null") || tokenStr.equals("this")) {
+        if (tipo == TokenType.INTEGER_CONSTANT) {
+            escritor.escreverPush("constant", Integer.parseInt(tokenStr));
+            consumir(tokenStr);
+        }
+        else if (tokenStr.equals("true")) {
+            escritor.escreverPush("constant", 0);
+            escritor.escreverAritmetica("not");
+            consumir(tokenStr);
+        }
+        else if (tokenStr.equals("false") || tokenStr.equals("null")) {
+            escritor.escreverPush("constant", 0);
+            consumir(tokenStr);
+        }
+        else if (tokenStr.equals("this")) {
+            escritor.escreverPush("pointer", 0);
             consumir(tokenStr);
         }
         else if (tokenStr.equals("(")) {
@@ -266,27 +337,32 @@ public class MecanismoCompilacao {
         }
         else if (tokenStr.equals("-") || tokenStr.equals("~")) {
             consumir(tokenStr);
-            compilarTermo();
+            compilarTermo(); // Empilha o número primeiro
+            if (tokenStr.equals("-")) escritor.escreverAritmetica("neg");
+            else escritor.escreverAritmetica("not");
         }
-        else {
-            consumir(tokenStr);
+        else if (tipo == TokenType.IDENTIFIER) {
+            String nome = tokenStr;
+            consumir(nome);
 
             String proximo = leitor.obterLexema();
             if (proximo.equals("[")) {
                 consumir("[");
                 compilarExpressao();
                 consumir("]");
-            } else if (proximo.equals("(")) {
+            } else if (proximo.equals("(") || proximo.equals(".")) {
+                if (proximo.equals(".")) {
+                    consumir(".");
+                    consumir(leitor.obterLexema());
+                }
                 consumir("(");
                 compilarListaArgumentos();
                 consumir(")");
-            } else if (proximo.equals(".")) {
-                consumir(".");
-                consumir(leitor.obterLexema());
-                consumir("(");
-                compilarListaArgumentos();
-                consumir(")");
+            } else {
+                escreverPushDaTabela(nome);
             }
+        } else {
+            consumir(tokenStr);
         }
     }
 }
