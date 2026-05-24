@@ -6,6 +6,8 @@ public class MecanismoCompilacao {
     private EscritorVM escritor;
     private TabelaSimbolos tabela;
     private String nomeClasseAtual;
+    private int contadorIf = 0;
+    private int contadorWhile = 0;
 
     /////////////////////////////////////////////////Construtor///////////////////////////////////////////////
     public MecanismoCompilacao(File entrada, File saida) throws IOException {
@@ -60,13 +62,13 @@ public class MecanismoCompilacao {
         String nome = leitor.obterLexema();
         consumir(nome);
 
-        tabela.definir(nome, tipo, kind); // Salva na tabela!
+        tabela.definir(nome, tipo, kind); // Salva na tabela
 
         while (leitor.obterLexema().equals(",")) {
             consumir(",");
             nome = leitor.obterLexema();
             consumir(nome);
-            tabela.definir(nome, tipo, kind); // Salva as extras na tabela!
+            tabela.definir(nome, tipo, kind); // Salva as extras na tabela
         }
 
         consumir(";");
@@ -79,7 +81,6 @@ public class MecanismoCompilacao {
         String tipoSubrotina = leitor.obterLexema(); // constructor, function ou method
         consumir(tipoSubrotina);
 
-        // Se for um método, o 'this' é implicitamente o primeiro argumento (índice 0)
         if (tipoSubrotina.equals("method")) {
             tabela.definir("this", nomeClasseAtual, TabelaSimbolos.Kind.ARG);
         }
@@ -196,57 +197,73 @@ public class MecanismoCompilacao {
                 default: break;
             }
         } else {
-            // Lógica de salvar em Arrays (a[i] = x).
+            // Lógica de salvar em Arrays (a[i] = x)
         }
     }
 
     public void compilarSe() {
+        int indiceIf = contadorIf++;
+        String labelFalse = "IF_FALSE" + indiceIf;
+        String labelEnd = "IF_END" + indiceIf;
+
         consumir("if");
         consumir("(");
-        compilarExpressao();
+        compilarExpressao(); // Resolve a condição e deixa true/false no topo da pilha
         consumir(")");
 
+        escritor.escreverAritmetica("not"); // Inverte a condição
+        escritor.escreverIf(labelFalse); // Se a condição for falsa, pula lá pro else!
+
         consumir("{");
-        compilarStatements();
+        compilarStatements(); // Executa o código de dentro do IF
         consumir("}");
+
+        escritor.escreverGoto(labelEnd); // Terminou o IF? Pula o Else para não executar os dois!
+        escritor.escreverLabel(labelFalse); // Aqui é onde o código cai se o IF for falso
 
         if (leitor.obterLexema().equals("else")) {
             consumir("else");
             consumir("{");
-            compilarStatements();
+            compilarStatements(); // Executa o código do ELSE
             consumir("}");
         }
+
+        escritor.escreverLabel(labelEnd); // Ponto de encontro final
     }
 
     public void compilarEnquanto() {
+        int indiceWhile = contadorWhile++;
+        String labelStart = "WHILE_EXP" + indiceWhile;
+        String labelEnd = "WHILE_END" + indiceWhile;
+
+        escritor.escreverLabel(labelStart); // Marca o início do loop
+
         consumir("while");
         consumir("(");
-        compilarExpressao();
+        compilarExpressao(); // Resolve a condição
         consumir(")");
-        consumir("{");
-        compilarStatements();
-        consumir("}");
-    }
 
-    public void compilarFazer() {
-        consumir("do");
-        consumir(leitor.obterLexema());
-        if (leitor.obterLexema().equals(".")) {
-            consumir(".");
-            consumir(leitor.obterLexema());
-        }
-        consumir("(");
-        compilarListaArgumentos();
-        consumir(")");
-        consumir(";");
+        escritor.escreverAritmetica("not"); // Inverte
+        escritor.escreverIf(labelEnd); // Se for falso, sai do loop imediatamente
+
+        consumir("{");
+        compilarStatements(); // Executa o miolo do while
+        consumir("}");
+
+        escritor.escreverGoto(labelStart); // Volta pro início para testar a condição de novo
+        escritor.escreverLabel(labelEnd); // Marca o fim do loop
     }
 
     public void compilarRetorno() {
         consumir("return");
         if (!leitor.obterLexema().equals(";")) {
-            compilarExpressao();
+            compilarExpressao(); // Se tiver um valor, calcula e joga na pilha
+        } else {
+            // Regra da VM do Jack: Funções Void PRECISAM retornar o número 0.
+            escritor.escreverPush("constant", 0);
         }
         consumir(";");
+        escritor.escreverRetorno(); // Manda a VM ejetar a função
     }
 
     /////////////////////////////////////////////////Expressões (Base)/////////////////////////////////////////
@@ -293,7 +310,7 @@ public class MecanismoCompilacao {
         }
     }
 
-    public void compilarListaArgumentos() {
+    public int compilarListaArgumentos() {
         int nArgs = 0;
         if (!leitor.obterLexema().equals(")")) {
             compilarExpressao();
@@ -305,6 +322,7 @@ public class MecanismoCompilacao {
                 nArgs++;
             }
         }
+        return nArgs;
     }
 
     /////////////////////////////////////////////////Termos (Base)/////////////////////////////////////////////
