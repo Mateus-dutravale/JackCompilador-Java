@@ -254,6 +254,52 @@ public class MecanismoCompilacao {
         escritor.escreverLabel(labelEnd); // Marca o fim do loop
     }
 
+    public void compilarFazer() {
+        consumir("do");
+
+        // 1. Pega o primeiro nome (pode ser a função, a classe ou o objeto)
+        String nome = leitor.obterLexema();
+        consumir(nome);
+
+        String nomeFuncao = nome;
+        int nArgs = 0;
+
+        // 2. Verifica se tem ponto (ex: Memory.alloc ou p1.imprimir)
+        if (leitor.obterLexema().equals(".")) {
+            consumir(".");
+            String subNome = leitor.obterLexema();
+            consumir(subNome);
+
+            String tipoObj = tabela.tipoDe(nome);
+            if (tipoObj != null) {
+                // É um objeto! Empilha ele primeiro e avisa que já tem 1 argumento
+                escreverPushDaTabela(nome);
+                nArgs = 1;
+                nomeFuncao = tipoObj + "." + subNome;
+            } else {
+                // É uma chamada de Classe direto (ex: Math.multiply)
+                nomeFuncao = nome + "." + subNome;
+            }
+        } else {
+            // É um método da PRÓPRIA classe (chamado direto, ex: desenhar())
+            escritor.escreverPush("pointer", 0); // Empilha o 'this'
+            nArgs = 1;
+            nomeFuncao = nomeClasseAtual + "." + nome;
+        }
+
+        consumir("(");
+        // Soma os argumentos que estão entre parênteses
+        nArgs += compilarListaArgumentos();
+        consumir(")");
+        consumir(";");
+
+        // 3. Efetua a chamada na VM
+        escritor.escreverChamada(nomeFuncao, nArgs);
+
+        // 4. A REGRA DE OURO DO DO: Joga fora o valor de retorno!
+        escritor.escreverPop("temp", 0);
+    }
+
     public void compilarRetorno() {
         consumir("return");
         if (!leitor.obterLexema().equals(";")) {
