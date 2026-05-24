@@ -128,20 +128,19 @@ public class MecanismoCompilacao {
             compilarVariavel();
         }
 
-        // DECLARAÇÃO DA FUNÇÃO
+        // DECLARAÇÃO DA FUNÇÕA
         int numVariaveisLocais = tabela.contagemVariaveis(TabelaSimbolos.Kind.VAR);
         escritor.escreverFuncao(nomeFuncaoCompleto, numVariaveisLocais);
 
-
-        // ALOCAÇÃO DE MEMORIA
+        // ALOCAÇÃO DE MEMÓRIA
         if (tipoSubrotina.equals("method")) {
             escritor.escreverPush("argument", 0);
             escritor.escreverPop("pointer", 0);
 
         } else if (tipoSubrotina.equals("constructor")) {
+            // VER O QUANTO DE ALOCAÇÃO É NECESSARIO PRA CRIAR O CONSTRUCTUOR
 
             int tamanhoObjeto = tabela.contagemVariaveis(TabelaSimbolos.Kind.FIELD);
-            // DIZ O TAMANHO EXATO DO CONSTRUTUR QUE SERA CRIADO DO ZERO
             escritor.escreverPush("constant", tamanhoObjeto);
             escritor.escreverChamada("Memory.alloc", 1);
 
@@ -195,8 +194,10 @@ public class MecanismoCompilacao {
         if (leitor.obterLexema().equals("[")) {
             ehArray = true;
             consumir("[");
-            compilarExpressao(); // Avalia o índice do array
+            escreverPushDaTabela(nomeVariavel);
+            compilarExpressao();
             consumir("]");
+            escritor.escreverAritmetica("add");
         }
 
         consumir("=");
@@ -219,7 +220,11 @@ public class MecanismoCompilacao {
                 default: break;
             }
         } else {
-            // Lógica de salvar em Arrays (a[i] = x)
+            // NA PILHA AGORA TEMOS: ENDEREÇO_ALVO E VALOR_CALCULADO, RESPECTIVAMENTE
+            escritor.escreverPop("temp", 0);       // Guarda o valor temporariamente
+            escritor.escreverPop("pointer", 1);    // Descarrega o endereço no pointer 1 (THAT)
+            escritor.escreverPush("temp", 0);      // Devolve o valor para a pilha
+            escritor.escreverPop("that", 0);       // Salva o valor no endereço do array!
         }
     }
 
@@ -403,6 +408,20 @@ public class MecanismoCompilacao {
             escritor.escreverPush("constant", Integer.parseInt(tokenStr));
             consumir(tokenStr);
         }
+        else if (tipo == TokenType.STRING_CONSTANT) {
+            String strReal = tokenStr.replace("\"", "");
+
+            escritor.escreverPush("constant", strReal.length());
+            escritor.escreverChamada("String.new", 1);
+
+            // Adiciona letra por letra usando a tabela ASCII
+            for (int i = 0; i < strReal.length(); i++) {
+                int valorAscii = (int) strReal.charAt(i);
+                escritor.escreverPush("constant", valorAscii);
+                escritor.escreverChamada("String.appendChar", 2);
+            }
+            consumir(tokenStr);
+        }
         else if (tokenStr.equals("true")) {
             escritor.escreverPush("constant", 0);
             escritor.escreverAritmetica("not");
@@ -434,21 +453,45 @@ public class MecanismoCompilacao {
             String proximo = leitor.obterLexema();
             if (proximo.equals("[")) {
                 consumir("[");
+                escreverPushDaTabela(nome); // Empilha o endereço base do array
                 compilarExpressao();
                 consumir("]");
+
+                escritor.escreverAritmetica("add"); // Soma base + i
+                escritor.escreverPop("pointer", 1); // Joga o resultado no pointer 1
+                escritor.escreverPush("that", 0);   // Lê o valor daquela posição de memória e põe na pilha!
+
             } else if (proximo.equals("(") || proximo.equals(".")) {
+                String nomeFuncao = nome;
+                int nArgs = 0;
+
                 if (proximo.equals(".")) {
                     consumir(".");
-                    consumir(leitor.obterLexema());
+                    String subNome = leitor.obterLexema();
+                    consumir(subNome);
+
+                    String tipoObj = tabela.tipoDe(nome);
+                    if (tipoObj != null) {
+                        escreverPushDaTabela(nome);
+                        nArgs = 1;
+                        nomeFuncao = tipoObj + "." + subNome;
+                    } else {
+                        nomeFuncao = nome + "." + subNome;
+                    }
+                } else {
+                    escritor.escreverPush("pointer", 0);
+                    nArgs = 1;
+                    nomeFuncao = nomeClasseAtual + "." + nome;
                 }
+
                 consumir("(");
-                compilarListaArgumentos();
+                nArgs += compilarListaArgumentos();
                 consumir(")");
+
+                escritor.escreverChamada(nomeFuncao, nArgs);
             } else {
                 escreverPushDaTabela(nome);
             }
-        } else {
-            consumir(tokenStr);
         }
     }
 }
