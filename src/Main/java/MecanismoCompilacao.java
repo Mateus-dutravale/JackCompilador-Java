@@ -408,6 +408,20 @@ public class MecanismoCompilacao {
             escritor.escreverPush("constant", Integer.parseInt(tokenStr));
             consumir(tokenStr);
         }
+        else if (tipo == TokenType.STRING_CONSTANT) {
+            String strReal = tokenStr.replace("\"", "");
+
+            escritor.escreverPush("constant", strReal.length());
+            escritor.escreverChamada("String.new", 1);
+
+            // Adiciona letra por letra usando a tabela ASCII
+            for (int i = 0; i < strReal.length(); i++) {
+                int valorAscii = (int) strReal.charAt(i);
+                escritor.escreverPush("constant", valorAscii);
+                escritor.escreverChamada("String.appendChar", 2);
+            }
+            consumir(tokenStr);
+        }
         else if (tokenStr.equals("true")) {
             escritor.escreverPush("constant", 0);
             escritor.escreverAritmetica("not");
@@ -446,20 +460,38 @@ public class MecanismoCompilacao {
                 escritor.escreverAritmetica("add"); // Soma base + i
                 escritor.escreverPop("pointer", 1); // Joga o resultado no pointer 1
                 escritor.escreverPush("that", 0);   // Lê o valor daquela posição de memória e põe na pilha!
-                
+
             } else if (proximo.equals("(") || proximo.equals(".")) {
+                String nomeFuncao = nome;
+                int nArgs = 0;
+
                 if (proximo.equals(".")) {
                     consumir(".");
-                    consumir(leitor.obterLexema());
+                    String subNome = leitor.obterLexema();
+                    consumir(subNome);
+
+                    String tipoObj = tabela.tipoDe(nome);
+                    if (tipoObj != null) {
+                        escreverPushDaTabela(nome);
+                        nArgs = 1;
+                        nomeFuncao = tipoObj + "." + subNome;
+                    } else {
+                        nomeFuncao = nome + "." + subNome;
+                    }
+                } else {
+                    escritor.escreverPush("pointer", 0);
+                    nArgs = 1;
+                    nomeFuncao = nomeClasseAtual + "." + nome;
                 }
+
                 consumir("(");
-                compilarListaArgumentos();
+                nArgs += compilarListaArgumentos();
                 consumir(")");
+
+                escritor.escreverChamada(nomeFuncao, nArgs);
             } else {
                 escreverPushDaTabela(nome);
             }
-        } else {
-            consumir(tokenStr);
         }
     }
 }
