@@ -194,8 +194,10 @@ public class MecanismoCompilacao {
         if (leitor.obterLexema().equals("[")) {
             ehArray = true;
             consumir("[");
-            compilarExpressao(); // Avalia o índice do array
+            escreverPushDaTabela(nomeVariavel);
+            compilarExpressao();
             consumir("]");
+            escritor.escreverAritmetica("add");
         }
 
         consumir("=");
@@ -218,7 +220,11 @@ public class MecanismoCompilacao {
                 default: break;
             }
         } else {
-            // Lógica de salvar em Arrays (a[i] = x)
+            // NA PILHA AGORA TEMOS: ENDEREÇO_ALVO E VALOR_CALCULADO, RESPECTIVAMENTE
+            escritor.escreverPop("temp", 0);       // Guarda o valor temporariamente
+            escritor.escreverPop("pointer", 1);    // Descarrega o endereço no pointer 1 (THAT)
+            escritor.escreverPush("temp", 0);      // Devolve o valor para a pilha
+            escritor.escreverPop("that", 0);       // Salva o valor no endereço do array!
         }
     }
 
@@ -433,8 +439,14 @@ public class MecanismoCompilacao {
             String proximo = leitor.obterLexema();
             if (proximo.equals("[")) {
                 consumir("[");
+                escreverPushDaTabela(nome); // Empilha o endereço base do array
                 compilarExpressao();
                 consumir("]");
+
+                escritor.escreverAritmetica("add"); // Soma base + i
+                escritor.escreverPop("pointer", 1); // Joga o resultado no pointer 1
+                escritor.escreverPush("that", 0);   // Lê o valor daquela posição de memória e põe na pilha!
+                
             } else if (proximo.equals("(") || proximo.equals(".")) {
                 if (proximo.equals(".")) {
                     consumir(".");
